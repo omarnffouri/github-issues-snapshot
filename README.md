@@ -5,7 +5,7 @@ An Angular 22 site showing the GitHub repository's open issues **as they were at
 ## Deploy in any public repository
 
 1. Put this project at the root of a public GitHub repository and push it to that repository's default branch.
-2. In the repository, open **Settings → Pages** and choose **GitHub Actions** under xw*Build and deployment → Source**. The workflow is already in `.github/workflows/deploy.yml`; you do not need a Pages template.
+2. In the repository, open **Settings → Pages** and choose **GitHub Actions** under **Build and deployment → Source**. The workflow is already in `.github/workflows/deploy.yml`; you do not need a Pages template.
 3. Open **Actions → Deploy issue snapshot → Run workflow**, choose the default branch, and run it.
 4. Wait for the deployment to finish. Open the site using the URL shown in the deployment or in **Settings → Pages**.
 5. To refresh the list after opening or closing issues, run the same workflow again. Pushes to the default branch also refresh it automatically.
