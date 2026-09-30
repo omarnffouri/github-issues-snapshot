@@ -1,0 +1,79 @@
+name: Deploy issue snapshot
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    # GitHub Actions does not allow an expression in push.branches.
+    if: github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: read
+      pages: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test snapshot pagination
+        run: npm run test:snapshot
+
+      - name: Test published site checks
+        run: npm run test:site
+
+      - name: Test Angular page
+        run: npm test -- --watch=false
+
+      - name: Read GitHub Pages path
+        id: pages
+        uses: actions/configure-pages@v5
+
+      - name: Fetch open issues
+        run: npm run snapshot
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+
+      - name: Build Angular for this Pages path
+        env:
+          PAGES_BASE_PATH: ${{ steps.pages.outputs.base_path }}
+        run: |
+          PAGES_BASE_HREF="${PAGES_BASE_PATH%/}/"
+          npm run build -- --base-href "$PAGES_BASE_HREF" --output-path dist/site
+
+      - name: Check files before publishing
+        run: npm run verify:site
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PAGES_BASE_PATH: ${{ steps.pages.outputs.base_path }}
+
+      - name: Upload site
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist/site/browser
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
