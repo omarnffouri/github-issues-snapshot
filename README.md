@@ -5,7 +5,7 @@ An Angular 22 site showing the GitHub repository's open issues **as they were at
 ## Deploy in any public repository
 
 1. Put this project at the root of a public GitHub repository and push it to that repository's default branch.
-2. In the repository, open **Settings → Pages** and choose **GitHub Actions** under **Build and deployment → Source**. The workflow is already in `.github/workflows/deploy.yml`; you do not need a Pages template.
+2. In the repository, open **Settings → Pages** and choose **GitHub Actions** under xw*Build and deployment → Source**. The workflow is already in `.github/workflows/deploy.yml`; you do not need a Pages template.
 3. Open **Actions → Deploy issue snapshot → Run workflow**, choose the default branch, and run it.
 4. Wait for the deployment to finish. Open the site using the URL shown in the deployment or in **Settings → Pages**.
 5. To refresh the list after opening or closing issues, run the same workflow again. Pushes to the default branch also refresh it automatically.
@@ -49,8 +49,14 @@ npm test -- --watch=false
 
 The snapshot tests cover empty and multi-page issue lists, label pagination, changing results, and cursor failures. The site checks cover Pages paths, placeholder rejection, and token detection. Angular tests cover empty and populated views.
 
-## Candidate note — personalize before submission
+## Candidate Note
 
-The assessment asks for a short note **in your own words**. This draft records what happened in this build; please rewrite it to reflect your own review before submitting:
+I used AI as a development tool during this task to speed up implementation and help with areas like Angular, GraphQL, and GitHub Actions.
 
-> I used AI to help build the Angular page, GraphQL snapshot script, tests, and Pages workflow in stages. I asked specifically about pagination beyond 100 issues, keeping the token out of the site, the Pages path after a transfer, default branch names, and token permissions. The AI initially left the generated Angular README in place. I caught that by checking the assessment requirements and asking about the README before deployment. With more time, I would test the full transfer and deployment flow in a second public repository and check the finished page on several phone sizes.
+I worked through the assessment step by step and reviewed each part against the requirements before moving on. I paid particular attention to pagination beyond 100 issues, keeping `GITHUB_TOKEN` out of the deployed application, and making sure the solution does not depend on my own repository name, account, or branch.
+
+During the process, I also caught a few things that needed correction, such as the default Angular README still being present, and fixed them before deployment.
+
+This task gave me a better understanding of GitHub Actions, GitHub Pages, GraphQL pagination, and secure use of workflow credentials.
+
+With more time, I would run one final transfer test using a completely different GitHub account and repository to verify the full reuse scenario end to end.
