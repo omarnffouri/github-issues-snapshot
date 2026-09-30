@@ -1,59 +1,56 @@
-# GithubIssueSnapshot
+# Issue Snapshot
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.2.0.
+An Angular 22 site showing the GitHub repository's open issues **as they were at the last deployment**. The published site is static: visitors do not need a GitHub account or token, and the page does not call the GitHub API.
 
-## Development server
+## Deploy in any public repository
 
-To start a local development server, run:
+1. Put this project at the root of a public GitHub repository and push it to that repository's default branch.
+2. In the repository, open **Settings → Pages** and choose **GitHub Actions** under **Build and deployment → Source**. The workflow is already in `.github/workflows/deploy.yml`; you do not need a Pages template.
+3. Open **Actions → Deploy issue snapshot → Run workflow**, choose the default branch, and run it.
+4. Wait for the deployment to finish. Open the site using the URL shown in the deployment or in **Settings → Pages**.
+5. To refresh the list after opening or closing issues, run the same workflow again. Pushes to the default branch also refresh it automatically.
 
-```bash
-ng serve
-```
+The first workflow run triggered by a push may fail if Pages has not been enabled yet. Run it manually after completing step 2. No personal access token, repository secret, code edit, or extra repository setting is required.
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+## How it works
 
-## Code scaffolding
+The [deployment workflow](.github/workflows/deploy.yml) accepts pushes and manual runs. It compares the current branch with GitHub's `repository.default_branch`, so a repository with a default branch named something other than `main` works without editing the workflow.
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+During the build, [the snapshot generator](scripts/fetch-issues.mjs) gets the repository identity from `GITHUB_REPOSITORY` and uses the workflow's automatic `GITHUB_TOKEN` to query GitHub's GraphQL API. It requests up to 100 open issues at a time and follows `pageInfo.endCursor` until `hasNextPage` is false. It also paginates labels when one issue has more than 100. It checks counts, duplicate issues, and repeated cursors. If a count or duplicate check detects a change during pagination, it retries once instead of publishing an incomplete list. GitHub does not provide an atomic snapshot across multiple queries, so concurrent edits may not always be detectable.
 
-```bash
-ng generate component component-name
-```
+The generator writes only repository name and URL, capture time, and each issue's number, title, URL, labels, author, and opening time to `public/issues.json`. Angular copies this file into the built site. [The app](src/app/app.ts) reads it relative to the page's base URL and requests it without browser caching, so a normal reload can show the latest deployment. It shows a clear empty state when the snapshot contains zero open issues. The checked-in `public/issues.json` is only a placeholder for local development; deployment replaces it with a real snapshot.
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+The workflow gets the site's base path from `actions/configure-pages`, then builds Angular with the matching `--base-href`. This works for a project site under a repository path or a site at the domain root, including after a repository transfer or rename. It uploads only `dist/site/browser` to Pages.
 
-```bash
-ng generate --help
-```
+## Credentials and permissions
 
-## Building
+The build job has `contents: read` for checkout, `issues: read` for the GraphQL query, and `pages: read` for Pages configuration. The separate deployment job has only `pages: write` and `id-token: write`, which Pages deployment needs. Other `GITHUB_TOKEN` permissions are not granted.
 
-To build the project run:
+The token is passed to the snapshot generator during the workflow. It is not supplied to the Angular build or browser code. The generator builds `issues.json` from an explicit list of public fields, and [the site check](scripts/verify-site.mjs) scans every published file for the exact workflow token before upload. The workflow stops if the token is found or if the generated snapshot or Pages base path is invalid.
 
-```bash
-ng build
-```
+## Run locally
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+Use the Node.js version in `.nvmrc`, then run:
 
 ```bash
-ng test
+npm ci
+npm start
 ```
 
-## Running end-to-end tests
+Open the local URL printed by Angular. The checked-in placeholder makes the local app display **Awaiting the first snapshot**; an Actions deployment generates the real snapshot in its build output, not in your local checkout. Local development does not require a token.
 
-For end-to-end (e2e) testing, run:
+To run the automated checks:
 
 ```bash
-ng e2e
+npm run test:snapshot
+npm run test:site
+npm test -- --watch=false
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+The snapshot tests cover empty and multi-page issue lists, label pagination, changing results, and cursor failures. The site checks cover Pages paths, placeholder rejection, and token detection. Angular tests cover empty and populated views.
 
-## Additional Resources
+## Candidate note — personalize before submission
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+The assessment asks for a short note **in your own words**. This draft records what happened in this build; please rewrite it to reflect your own review before submitting:
+
+> I used AI to help build the Angular page, GraphQL snapshot script, tests, and Pages workflow in stages. I asked specifically about pagination beyond 100 issues, keeping the token out of the site, the Pages path after a transfer, default branch names, and token permissions. The AI initially left the generated Angular README in place. I caught that by checking the assessment requirements and asking about the README before deployment. With more time, I would test the full transfer and deployment flow in a second public repository and check the finished page on several phone sizes.
