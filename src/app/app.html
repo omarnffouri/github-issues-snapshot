@@ -1,0 +1,106 @@
+<div class="page-shell">
+  <header class="site-header">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
+      <span>Issue Snapshot</span>
+    </div>
+    <span class="header-note">Captured on deploy</span>
+  </header>
+
+  <main>
+    <section class="hero" aria-labelledby="page-title">
+      <p class="eyebrow">GitHub repository tracker</p>
+      <h1 id="page-title">Open issues<span>.</span></h1>
+      <p class="intro">
+        A clear view of the issues that were open when this site was last deployed.
+      </p>
+    </section>
+
+    <section class="snapshot" aria-labelledby="list-title">
+      <div class="section-heading">
+        <div>
+          <p class="section-kicker">The latest snapshot</p>
+          <h2 id="list-title">Issue list</h2>
+        </div>
+        @if (status() === 'ready') {
+          <span class="count">{{ snapshot()?.issues?.length }} open</span>
+        }
+      </div>
+
+      @if (status() === 'loading') {
+        <div class="state-card" role="status">
+          <span class="state-icon" aria-hidden="true">↻</span>
+          <h3>Loading the snapshot</h3>
+          <p>Reading the issue list saved with this site.</p>
+        </div>
+      } @else if (status() === 'error') {
+        <div class="state-card" role="alert">
+          <span class="state-icon" aria-hidden="true">!</span>
+          <h3>Could not load the snapshot</h3>
+          <p>Reload the page to try again.</p>
+        </div>
+      } @else if (status() === 'pending') {
+        <div class="state-card" role="status">
+          <span class="state-icon" aria-hidden="true">⌁</span>
+          <h3>Awaiting the first snapshot</h3>
+          <p>The issue list will appear after the site is deployed with repository data.</p>
+        </div>
+      } @else if (snapshot(); as data) {
+        <div class="repository-row">
+          <a [href]="data.repository!.url" target="_blank" rel="noopener noreferrer">
+            {{ data.repository!.nameWithOwner }} <span aria-hidden="true">↗</span>
+          </a>
+          <span
+            >Updated
+            <time [attr.datetime]="data.generatedAt">{{
+              data.generatedAt | date: 'medium'
+            }}</time></span
+          >
+        </div>
+
+        @if (data.issues.length === 0) {
+          <div class="state-card empty-state" role="status">
+            <span class="state-icon" aria-hidden="true">✓</span>
+            <h3>No open issues</h3>
+            <p>This repository had no open issues when this snapshot was created.</p>
+          </div>
+        } @else {
+          <ol class="issue-list">
+            @for (issue of data.issues; track issue.number) {
+              <li class="issue-card">
+                <div class="issue-content">
+                  <div class="issue-heading">
+                    <span class="issue-number">#{{ issue.number }}</span>
+                    <h3>
+                      <a [href]="issue.url" target="_blank" rel="noopener noreferrer">{{
+                        issue.title
+                      }}</a>
+                    </h3>
+                  </div>
+                  <div class="labels" aria-label="Labels">
+                    @for (label of issue.labels; track label) {
+                      <span class="label">{{ label }}</span>
+                    } @empty {
+                      <span class="no-labels">No labels</span>
+                    }
+                  </div>
+                </div>
+                <div class="issue-meta">
+                  <span
+                    >Opened
+                    <time [attr.datetime]="issue.openedAt">{{
+                      issue.openedAt | date: 'mediumDate'
+                    }}</time></span
+                  >
+                  <span>by {{ issue.author || 'Unknown author' }}</span>
+                </div>
+              </li>
+            }
+          </ol>
+        }
+      }
+    </section>
+  </main>
+
+  <footer class="site-footer">This page updates when the site is redeployed.</footer>
+</div>
